@@ -99,8 +99,10 @@ check('Six complete programme records and traceable primary sources', () => {
   for (const task of tasks) assert(task.evidence.length);
   assert.equal(data.commonTasks.length, 8);
   for (const task of data.commonTasks) assert.equal(task.feedback.length, 4);
-  assert.deepEqual(JSON.parse(JSON.stringify(data.examOptions.map(exam => exam.id))), ['python', 'ielts', 'igcse', 'ial']);
-  for (const exam of data.examOptions) assert(data.sources.some(source => source.id === exam.source));
+  assert.deepEqual(JSON.parse(JSON.stringify(data.examOptions.map(exam => exam.id))), ['python', 'cie-other', 'arduino', 'other', 'ielts', 'igcse', 'ial']);
+  for (const exam of data.examOptions) if (exam.source) assert(data.sources.some(source => source.id === exam.source));
+  assert(data.examOptions.find(exam => exam.id === "python").label.includes("1–6"));
+  assert(data.sources.find(source => source.id === "python-exam").url.includes("qceit.org.cn"));
 });
 check('First render: all six cards, default comparison and source list', () => {
   assert.equal((elements.get('programme-grid').innerHTML.match(/<article/g) || []).length, 6);
@@ -201,8 +203,8 @@ check('Exam checkboxes reveal content, level and status; switching preserves ent
   const focus = elements.get('prepare-focus'); focus.value = 'common'; handlers.get('change')({ target: focus });
   assert.equal(readPlain().preparation.exams.igcse.status, 'preparing');
   assert.equal(readPlain().preparation.exams.igcse.level, '目標 A');
-  for (const id of ['python', 'ielts', 'ial']) dispatchChange(inputFor('exam', id), true);
-  assert.equal(queryAll('[data-exam-field]').length, 12);
+  for (const id of ['python', 'cie-other', 'arduino', 'other', 'ielts', 'ial']) dispatchChange(inputFor('exam', id), true);
+  assert.equal(queryAll('[data-exam-field]').length, 21);
   assert.equal(readPlain().preparation.projects[0].skills, '我能獨立做的操作');
 });
 check('Confidence is initially unanswered and changes targeted feedback without marking completion', () => {
