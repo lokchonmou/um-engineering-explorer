@@ -103,6 +103,8 @@ check('Six complete programme records and traceable primary sources', () => {
   for (const exam of data.examOptions) if (exam.source) assert(data.sources.some(source => source.id === exam.source));
   assert(data.examOptions.find(exam => exam.id === "python").label.includes("1–6"));
   assert(data.sources.find(source => source.id === "python-exam").url.includes("qceit.org.cn"));
+  assert(elements.get("checklist-content").innerHTML.includes("2027/2028"));
+  assert(elements.get("checklist-content").innerHTML.includes("參賽本身不等於獲獎"));
 });
 check('First render: all six cards, default comparison and source list', () => {
   assert.equal((elements.get('programme-grid').innerHTML.match(/<article/g) || []).length, 6);
