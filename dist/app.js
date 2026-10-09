@@ -158,6 +158,13 @@
   renderChecklist();
   el("source-list").innerHTML = data.sources.map((source, i) => `<article class="source-item"><span class="source-number">${String(i + 1).padStart(2, "0")}</span><div><h3>${link(source)}</h3><p>${escape(source.note)}</p><small>${escape(source.type)} · ${escape(new URL(source.url).hostname)}</small></div></article>`).join("");
 
+  window.EXPLORER_SAVE = window.createSaveManager({ data, read: readState, escape, restore(saved) {
+    state.selected = new Set(saved.comparison); state.interests = new Set(saved.interests); state.abilities = new Set(saved.abilities);
+    state.focus = saved.checklistFocus; state.completed = new Set(saved.completedTasks);
+    preparation.restore(saved.preparation);
+    renderFilterOptions(); renderProgrammes(); renderComparison(); renderChecklist(); switchView("prepare");
+  } });
+
   const context = document.modelContext;
   if (context && typeof context.registerTool === "function") {
     const lifecycle = new AbortController();

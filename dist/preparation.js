@@ -28,8 +28,18 @@
     { id: "ial-exam", title: "Pearson Edexcel：International AS/A Levels", url: "https://qualifications.pearson.com/en/qualifications/edexcel-international-advanced-levels.html", type: "考試機構官方", note: "IAL 科目與資格資料入口；填清科目／單元及已有或目標結果。" }
   );
 
+  data.contestBenefits = [
+    ["coding", "程式設計／數碼工具"], ["design", "工程設計／製作"], ["testing", "量度／測試／數據分析"],
+    ["research", "資料搜尋／研究"], ["problem", "解難／決策"], ["creative", "創意／創新"],
+    ["critical", "批判思考／證據判斷"], ["team", "團隊合作"], ["lead", "領導／分工協調"],
+    ["communication", "溝通／表達／展示"], ["planning", "時間管理／項目規劃"],
+    ["resilience", "抗逆／自我調節"], ["sport", "體能／運動技能"], ["other", "其他（自行填寫）"]
+  ].map(([id, label]) => ({ id, label }));
   window.createPreparation = ({ state, escape, references, repaint }) => {
     let nextProject = 2;
+    let nextContest = 2;
+    const blankContest = id => ({ id, name: "", role: "", outcome: "", benefits: [], other: "" });
+    state.contests = [blankContest("c1")];
     let nextExam = 1;
     let nextNote = 1;
     const noteGroups = {
@@ -58,10 +68,11 @@
       const config = noteGroups[group];
       return `<div class="project-fields">${state.notes[group].map((row, index) => `<div class="project-entry"><div class="entry-heading"><strong>${config.label} ${index + 1}</strong><button type="button" class="text-button" data-remove-note="${row.id}" data-note-group="${group}" aria-label="移除${config.label} ${index + 1}">移除</button></div><div class="project-inputs" style="grid-template-columns:1fr">${config.fields.map(([key, label]) => `<label for="note-${row.id}-${key}">${label}<input type="text" id="note-${row.id}-${key}" data-note-group="${group}" data-note-entry="${row.id}" data-note-field="${key}" maxlength="300" value="${escape(row[key])}"></label>`).join("")}</div></div>`).join("")}<button type="button" class="secondary-button" data-add-note="${group}">${config.addLabel}</button></div>`;
     };
+    const contestRecords = () => `<div class="project-fields"><p class="prep-hint">只列出最多三項最具代表性的比賽；可包括科技、學科、體育或其他類型。勾選的是你自己的經驗判斷，不等於已證明掌握能力。</p>${state.contests.map((row, index) => `<div class="project-entry"><div class="entry-heading"><strong>代表性比賽 ${index + 1}</strong><button type="button" class="text-button" data-remove-contest="${row.id}" aria-label="移除比賽 ${index + 1}">移除</button></div><div class="contest-inputs">${[["name", "比賽名稱／年份"], ["role", "我參與的項目／角色"], ["outcome", "參賽成果／獎項（如有）"]].map(([key, label]) => `<label for="contest-${row.id}-${key}">${label}<input type="text" id="contest-${row.id}-${key}" data-contest="${row.id}" data-contest-field="${key}" maxlength="300" value="${escape(row[key])}"></label>`).join("")}</div><details class="benefit-picker"><summary data-benefit-summary="${row.id}">這個比賽如何幫助你？（可多選；已選 ${row.benefits.length} 項）</summary><div class="benefit-options">${data.contestBenefits.map(item => `<label class="check-option"><input type="checkbox" data-contest="${row.id}" data-contest-benefit="${item.id}" ${row.benefits.includes(item.id) ? "checked" : ""}><span>${item.label}</span></label>`).join("")}</div></details><div class="contest-inputs" data-contest-other="${row.id}" ${row.benefits.includes("other") ? "" : "hidden"}><label for="contest-${row.id}-other">其他幫助<input type="text" id="contest-${row.id}-other" data-contest="${row.id}" data-contest-field="other" maxlength="300" value="${escape(row.other)}"></label></div></div>`).join("")}<button type="button" class="secondary-button" data-add-contest="true" ${state.contests.length >= 3 ? "disabled" : ""}>${state.contests.length >= 3 ? "已列出三項代表性比賽" : "新增比賽（最多三項）"}</button></div>`;
     const contestMarkup = () => `<details class="contest-policy"><summary>參賽如何幫助升學？澳大有正式加分計劃</summary><div class="detail-body"><p><strong>澳大官方政策 · 2027/2028 學年</strong><br>適用於澳門中學應屆高三、參加當年度入學考試的申請人。符合指定獎項／資格並經審核，可在所報志願要求的各科入學考試加 20–50 分；同一類別累計上限 60 分，不同類別可累計。參賽本身不等於獲獎，亦不是保證錄取。</p><p><strong>科普類的工程相關例子</strong>（須符合官方列明的組別／獎項，通常於高中最後三年內獲得）：</p><ul><li>全澳青少年創新挑戰賽／全國青少年科技創新大賽：個人或集體項目獲獎</li><li>潛能拓展創新菁英賽／國際科學與工程大獎賽選拔活動：獲獎</li><li>澳門青少年綜合機械人科普活動選拔大賽：獲獎</li><li>通訊博物館電子裝置製作比賽：高中組獲獎</li><li>學界數學高中組、物理高級組、化學比賽：指定個人獎</li><li>中銀科創菁英挑戰賽：一、二或三等獎</li></ul><p><strong>現在可準備：</strong>保留證書、比賽章程、獲獎名單及個人貢獻紀錄。未列明的才能／獎項也可提交審核，但須附章程及獲獎名單。先完成入學考試報名，再於 2027 年 1 月 18–29 日申請加分；最多填報 10 項。完整名單、文件要求及當屆規則見官方頁。</p><p class="source-line">${references(["um-bonus"])} · 核對：2026-10-10</p><p><strong>其他大學 · 本站準備建議：</strong>競賽可留下解題、設計、測試與團隊貢獻的證據，供申請材料或面試說明；具體是否採計、是否加分，須看該校及入學途徑的規則。選有學習價值的挑戰，並把成果整理清楚。</p></div></details>`;
     const feedback = id => data.commonTasks.find(task => task.id === id)?.feedback[state.confidence[id] - 1] || "";
     function markup() {
-      return `<section class="check-group"><div class="check-group-heading"><h3>八項共同準備</h3><span>按自己的需要選擇</span></div><div class="prep-card-grid">${data.commonTasks.map((task, index) => `<article class="prep-card ${["prep-projects", "prep-exams"].includes(task.id) ? "wide-card" : ""}"><label class="prep-check"><input type="checkbox" data-task="${task.id}" ${state.completed.has(task.id) ? "checked" : ""}><span><small>${String(index + 1).padStart(2, "0")} / 我已開始這項準備</small><strong>${escape(task.title)}</strong></span></label><p>${escape(task.detail)}</p>${task.id === "prep-projects" ? projectMarkup() : task.id === "prep-exams" ? examMarkup() : task.id === "prep-contests" ? contestMarkup() : noteGroups[task.id] ? noteMarkup(task.id) : ""}<p class="prep-hint">${escape(task.evidence)}</p><fieldset class="confidence-options"><legend>我對這項準備的信心</legend>${levels.map((label, i) => `<label><input type="radio" name="confidence-${task.id}" data-confidence="${task.id}" value="${i + 1}" ${state.confidence[task.id] === i + 1 ? "checked" : ""}><span>${i + 1}<small>${label}</small></span></label>`).join("")}</fieldset><p class="confidence-feedback" data-confidence-feedback="${task.id}" role="status" aria-live="polite" ${feedback(task.id) ? "" : "hidden"}>${feedback(task.id) ? `下一步：${escape(feedback(task.id))}` : ""}</p></article>`).join("")}</div></section>`;
+      return `<section class="check-group"><div class="check-group-heading"><h3>八項共同準備</h3><span>按自己的需要選擇</span></div><div class="prep-card-grid">${data.commonTasks.map((task, index) => `<article class="prep-card ${["prep-projects", "prep-exams", "prep-contests"].includes(task.id) ? "wide-card" : ""}"><label class="prep-check"><input type="checkbox" data-task="${task.id}" ${state.completed.has(task.id) ? "checked" : ""}><span><small>${String(index + 1).padStart(2, "0")} / 我已開始這項準備</small><strong>${escape(task.title)}</strong></span></label><p>${escape(task.detail)}</p>${task.id === "prep-projects" ? projectMarkup() : task.id === "prep-exams" ? examMarkup() : task.id === "prep-contests" ? contestRecords() + contestMarkup() : noteGroups[task.id] ? noteMarkup(task.id) : ""}<p class="prep-hint">${escape(task.evidence)}</p><fieldset class="confidence-options"><legend>我對這項準備的信心</legend>${levels.map((label, i) => `<label><input type="radio" name="confidence-${task.id}" data-confidence="${task.id}" value="${i + 1}" ${state.confidence[task.id] === i + 1 ? "checked" : ""}><span>${i + 1}<small>${label}</small></span></label>`).join("")}</fieldset><p class="confidence-feedback" data-confidence-feedback="${task.id}" role="status" aria-live="polite" ${feedback(task.id) ? "" : "hidden"}>${feedback(task.id) ? `下一步：${escape(feedback(task.id))}` : ""}</p></article>`).join("")}</div></section>`;
     }
     function setConfidence(id, score) {
       if (!data.commonTasks.some(task => task.id === id) || !Number.isInteger(score) || score < 1 || score > 4) throw new Error("請選有效項目及 1–4 級信心");
@@ -81,6 +92,11 @@
       row[key] = value;
     }
     function onInput(input) {
+      if (input.dataset.contestField) {
+        const row = state.contests.find(contest => contest.id === input.dataset.contest);
+        if (!row || !["name", "role", "outcome", "other"].includes(input.dataset.contestField) || typeof input.value !== "string" || input.value.length > 300) throw new Error("比賽輸入無效");
+        row[input.dataset.contestField] = input.value;
+      }
       if (input.dataset.noteField) {
         const config = noteGroups[input.dataset.noteGroup];
         const row = state.notes[input.dataset.noteGroup]?.find(note => note.id === input.dataset.noteEntry);
@@ -91,6 +107,14 @@
       if (input.dataset.examField && input.dataset.examField !== "status") setExamField(input.dataset.examId, input.dataset.examField, input.value, input.dataset.examEntry);
     }
     function onChange(input) {
+      if (input.dataset.contestBenefit) {
+        const row = state.contests.find(contest => contest.id === input.dataset.contest);
+        const id = input.dataset.contestBenefit;
+        if (!row || !data.contestBenefits.some(item => item.id === id)) return;
+        row.benefits = data.contestBenefits.filter(item => item.id === id ? input.checked : row.benefits.includes(item.id)).map(item => item.id);
+        document.querySelectorAll("[data-benefit-summary]").forEach(summary => { if (summary.dataset.benefitSummary === row.id) summary.textContent = `這個比賽如何幫助你？（可多選；已選 ${row.benefits.length} 項）`; });
+        document.querySelectorAll("[data-contest-other]").forEach(box => { if (box.dataset.contestOther === row.id) box.hidden = !row.benefits.includes("other"); });
+      }
       if (input.dataset.confidence) setConfidence(input.dataset.confidence, Number(input.value));
       if (input.dataset.exam) {
         if (!Object.hasOwn(state.exams, input.dataset.exam)) return;
@@ -100,6 +124,16 @@
       if (input.dataset.examField === "status") setExamField(input.dataset.examId, "status", input.value, input.dataset.examEntry);
     }
     function onClick(target) {
+      if (target.closest("[data-add-contest]") && state.contests.length < 3) {
+        const id = `c${nextContest++}`; state.contests.push(blankContest(id)); repaint();
+        [...document.querySelectorAll("[data-contest-field]")].find(input => input.dataset.contest === id && input.dataset.contestField === "name")?.focus({ preventScroll: true });
+      }
+      const removeContest = target.closest("[data-remove-contest]");
+      if (removeContest) {
+        state.contests = state.contests.filter(row => row.id !== removeContest.dataset.removeContest);
+        if (!state.contests.length) state.contests.push(blankContest(`c${nextContest++}`));
+        repaint(); document.querySelectorAll("[data-add-contest]")[0]?.focus({ preventScroll: true });
+      }
       const addNote = target.closest("[data-add-note]");
       if (addNote && noteGroups[addNote.dataset.addNote]) {
         const group = addNote.dataset.addNote;
@@ -140,7 +174,15 @@
         repaint(); document.querySelectorAll("[data-add-project]")[0]?.focus({ preventScroll: true });
       }
     }
-    const read = () => JSON.parse(JSON.stringify({ projects: state.projects, exams: state.exams, notes: state.notes, confidence: state.confidence, feedback: Object.fromEntries(Object.keys(state.confidence).map(id => [id, feedback(id)])) }));
-    return { markup, onInput, onChange, onClick, read, setConfidence, setProjectField, setExamField };
+    const read = () => JSON.parse(JSON.stringify({ projects: state.projects, contests: state.contests, exams: state.exams, notes: state.notes, confidence: state.confidence, feedback: Object.fromEntries(Object.keys(state.confidence).map(id => [id, feedback(id)])) }));
+    function restore(saved) {
+      const clean = JSON.parse(JSON.stringify(saved));
+      for (const key of ["projects", "contests", "exams", "notes", "confidence"]) state[key] = clean[key];
+      const maxSuffix = rows => Math.max(0, ...rows.map(row => Number(row.id.match(/(\d+)$/)[1])));
+      nextProject = maxSuffix(state.projects) + 1; nextContest = maxSuffix(state.contests) + 1;
+      nextExam = maxSuffix(Object.values(state.exams).flatMap(group => group.entries || [])) + 1;
+      nextNote = maxSuffix(Object.values(state.notes).flat()) + 1;
+    }
+    return { restore, markup, onInput, onChange, onClick, read, setConfidence, setProjectField, setExamField };
   };
 })();

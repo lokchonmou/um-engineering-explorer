@@ -7,10 +7,11 @@
   <meta name="theme-color" content="#152745">
   <title>澳大工程升學探索站</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23152745'/%3E%3Cpath d='M8 8v11q0 6 8 6t8-6V8' fill='none' stroke='%23ffbb60' stroke-width='4'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=20261010-save">
   <script defer src="data.js"></script>
-  <script defer src="preparation.js?v=20261010-subjects"></script>
-  <script defer src="app.js"></script>
+  <script defer src="preparation.js?v=20261010-save"></script>
+  <script defer src="save.js?v=20261010-save"></script>
+  <script defer src="app.js?v=20261010-save"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">跳到主要內容</a>
@@ -57,7 +58,13 @@
     <section id="prepare-view" class="view" aria-labelledby="prepare-title" hidden>
       <div class="section-heading prepare-heading"><div><p class="eyebrow">03 / 現在就能開始</p><h2 id="prepare-title">我會甚麼？下一步準備甚麼？</h2></div><label class="focus-select" for="prepare-focus">探索方向<select id="prepare-focus"></select></label></div>
       <p class="section-description">先從你自己的經驗開始，再選一項值得推進的準備。可用關鍵字填寫；每項選擇 1–4 級信心後會顯示下一步建議。以下是探索建議，不是官方申請條件。</p>
-      <div class="progress-panel"><div><strong id="progress-label" role="status" aria-live="polite"></strong><span>勾選及輸入只保留本次開啟；重新整理會重設。</span></div><progress id="check-progress" max="1" value="0" aria-label="目前清單開始準備的進度"></progress></div>
+      <div class="save-panel" aria-label="儲存及匯出準備紀錄">
+        <div class="save-actions"><button type="button" id="export-pdf" class="secondary-button">匯出 PDF</button><button type="button" id="export-json" class="button">匯出 JSON 儲存檔</button><button type="button" id="import-json" class="secondary-button">匯入 JSON 儲存檔</button><input type="file" id="import-file" accept=".json,application/json" aria-label="選擇 JSON 儲存檔" hidden></div>
+        <p>PDF 供閱讀：預覽後選「列印／另存為 PDF」。JSON 供接續填寫：離開前匯出，下次匯入；資料不會上載到伺服器。</p>
+        <p id="save-status" role="status" aria-live="polite"></p>
+        <div id="import-review" class="notice" hidden><p id="import-summary"></p><button type="button" id="confirm-import" class="button">確認匯入並取代目前內容</button><button type="button" id="cancel-import" class="secondary-button">取消</button></div>
+      </div>
+      <div class="progress-panel"><div><strong id="progress-label" role="status" aria-live="polite"></strong><span>本次輸入不會自動保存；重新整理前請匯出 JSON，之後可匯入接續。</span></div><progress id="check-progress" max="1" value="0" aria-label="目前清單開始準備的進度"></progress></div>
       <p class="confidence-note">信心是自我感受，不能直接當成能力分數。回饋只提供一個可做的下一步；可用實際表現或老師追問再核對。</p>
       <div id="checklist-content"></div>
       <div class="reflection"><span class="reflection-label">這次先選一個下一步</span><h3>我會甚麼、憑甚麼知道、下一步要補甚麼？</h3><p>用一次說明、練習或真實嘗試檢查自己的判斷，再調整準備方向。</p></div>
@@ -83,6 +90,10 @@
       <div id="source-list" class="source-list"></div>
     </section>
   </main>
+  <section id="export-preview" role="dialog" aria-modal="true" aria-label="PDF 整理版預覽" hidden>
+    <div class="report-actions"><button type="button" id="print-pdf" class="button">列印／另存為 PDF</button><button type="button" id="close-report" class="secondary-button">返回填寫</button><span>在列印視窗選「另存為 PDF」；接續編輯請另外保留 JSON。</span></div>
+    <article id="print-report"></article>
+  </section>
   <footer><span>澳大工程升學探索站 · 教學探索用途，非澳大官方網站</span><span>課程事實與升學分析分開標示</span></footer>
   <div class="compare-dock"><div><strong id="dock-count">已選 2 科</strong><span id="dock-names">EME · ECE</span></div><button type="button" data-view="compare" class="button">開始比較</button></div>
   <noscript><p class="notice">互動比較、篩選與清單需要啟用 JavaScript。請啟用後重新整理。</p></noscript>

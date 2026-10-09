@@ -36,7 +36,7 @@ class Element {
   }
   set innerHTML(value) {
     this._html = value;
-    this.children = [...value.matchAll(/<(input|button|option|select|p)\b[^>]*>/g)].map(match => new Element(match[1], attrs(match[0])));
+    this.children = [...value.matchAll(/<(input|button|option|select|p|summary|div)\b[^>]*>/g)].map(match => new Element(match[1], attrs(match[0])));
   }
   get innerHTML() { return this._html; }
   addEventListener(type, handler) { this.events[type] = handler; }
@@ -68,6 +68,7 @@ document = {
 sandbox = vm.createContext({ document, window: { scrollTo() {}, addEventListener() {}, matchMedia() { return { matches: mobile }; } }, URL, AbortController, console });
 vm.runInContext(fs.readFileSync(path.join(root, 'dist/data.js'), 'utf8'), sandbox);
 vm.runInContext(fs.readFileSync(path.join(root, 'dist/preparation.js'), 'utf8'), sandbox);
+vm.runInContext(fs.readFileSync(path.join(root, 'dist/save.js'), 'utf8'), sandbox);
 vm.runInContext(fs.readFileSync(path.join(root, 'dist/app.js'), 'utf8'), sandbox);
 }
 boot();
@@ -266,6 +267,26 @@ check('News and reflection records add independently, survive switching and remo
   const ids = queryAll('[data-note-field]').map(input => input.id);
   assert.equal(new Set(ids).size, ids.length);
 });
+check('Competition records enforce three representative entries and preserve multi-select benefits', () => {
+  const click = (key, value) => handlers.get('click')({ target: inputFor(key, value) });
+  const input = queryAll('[data-contest-field]').find(input => input.dataset.contestField === 'name');
+  input.value = '校際體育賽'; handlers.get('input')({ target: input });
+  for (const id of ['team', 'lead', 'other']) {
+    const checkbox = queryAll('[data-contest-benefit]').find(input => input.dataset.contest === 'c1' && input.dataset.contestBenefit === id);
+    dispatchChange(checkbox, true);
+  }
+  assert.deepEqual(readPlain().preparation.contests[0].benefits, ['team', 'lead', 'other']);
+  assert.equal(queryAll('[data-contest-other]').find(box => box.dataset.contestOther === 'c1').hidden, false);
+  const other = queryAll('[data-contest-field]').find(input => input.dataset.contest === 'c1' && input.dataset.contestField === 'other');
+  other.value = '協調策略'; handlers.get('input')({ target: other });
+  click('add-contest', 'true'); click('add-contest', 'true'); click('add-contest', 'true');
+  assert.equal(readPlain().preparation.contests.length, 3);
+  assert.equal(inputFor('add-contest', 'true').properties.disabled, '');
+  click('remove-contest', readPlain().preparation.contests[1].id);
+  assert.equal(readPlain().preparation.contests.length, 2);
+  assert.equal(readPlain().preparation.contests[0].other, '協調策略');
+  click('add-contest', 'true'); assert.equal(readPlain().preparation.contests.length, 3);
+});
 check('Confidence is initially unanswered and changes targeted feedback without marking completion', () => {
   assert.deepEqual(readPlain().preparation.confidence, {});
   const id = 'prep-understanding';
@@ -317,11 +338,76 @@ check('WebMCP schemas, valid actions and invalid input atomicity in simulated co
     assert.throws(() => confidence.execute(input)); assert.deepEqual(readPlain(), beforeConfidence);
   }
 });
+check('JSON round-trip preserves all records, progress, confidence, filters and IDs without overwrite on invalid files', () => {
+  const manager = sandbox.window.EXPLORER_SAVE;
+  const saved = JSON.parse(JSON.stringify(manager.exportObject()));
+  const originalReport = manager.report();
+  assert(originalReport.includes('校際體育賽') && originalReport.includes('團隊合作') && originalReport.includes('領導／分工協調'));
+  assert(!originalReport.includes('<img src=x') && originalReport.includes('&lt;img src=x'));
+  boot();
+  const api = sandbox.window.EXPLORER_SAVE;
+  api.importText(JSON.stringify(saved));
+  assert.deepEqual(JSON.parse(JSON.stringify(api.exportObject().data)), saved.data);
+  assert.equal(readPlain().view, 'prepare');
+  const before = readPlain();
+  const badFiles = ['{', JSON.stringify({ ...saved, version: 2 }), ' '.repeat(1024 * 1024 + 1)];
+  const mutate = fn => { const copy = JSON.parse(JSON.stringify(saved)); fn(copy); badFiles.push(JSON.stringify(copy)); };
+  mutate(file => file.data.preparation.contests.push(file.data.preparation.contests[0]));
+  mutate(file => file.data.preparation.contests[0].benefits = ['bogus']);
+  mutate(file => file.data.preparation.projects[0].name = 123);
+  mutate(file => file.data.preparation.confidence['prep-news'] = 5);
+  mutate(file => file.data.preparation.exams.igcse.entries.push(file.data.preparation.exams.igcse.entries[0]));
+  mutate(file => file.data.preparation.projects[0].id = 'p\" onclick=alert(1)');
+  mutate(file => file.data.preparation.notes['prep-news'][0].topic = 'x'.repeat(301));
+  mutate(file => file.data.completedTasks = ['not-a-task']);
+  mutate(file => Object.defineProperty(file.data.preparation.confidence, '__proto__', { value: {}, enumerable: true }));
+  for (const content of badFiles) { assert.throws(() => api.importText(content)); assert.deepEqual(readPlain(), before); }
+  const projectIds = readPlain().preparation.projects.map(row => row.id);
+  handlers.get('click')({ target: inputFor('add-project', 'true') });
+  assert.equal(new Set(readPlain().preparation.projects.map(row => row.id)).size, projectIds.length + 1);
+  for (const group of ['igcse', 'ial', 'cie-other', 'other']) {
+    handlers.get('click')({ target: inputFor('add-exam', group) });
+    const ids = readPlain().preparation.exams[group].entries.map(row => row.id);
+    assert.equal(new Set(ids).size, ids.length);
+  }
+  handlers.get('click')({ target: inputFor('remove-contest', readPlain().preparation.contests[1].id) });
+  handlers.get('click')({ target: inputFor('add-contest', 'true') });
+  assert.equal(new Set(readPlain().preparation.contests.map(row => row.id)).size, 3);
+  assert.equal(api.validate(api.exportObject()).preparation.contests.length, 3);
+  elements.get('export-pdf').events.click();
+  assert.equal(elements.get('export-preview').hidden, false);
+  assert(elements.get('print-report').innerHTML.includes('考試／認證'));
+  elements.get('close-report').events.click(); assert.equal(elements.get('export-preview').hidden, true);
+});
+{
+  const api = sandbox.window.EXPLORER_SAVE;
+  const saved = JSON.parse(JSON.stringify(api.exportObject()));
+  saved.data.preparation.projects[0].name = '測試 JSON 匯入';
+  const before = readPlain();
+  const fileEvent = content => ({ target: { files: [{ name: 'test.json', size: content.length, text: async () => content }], value: 'test.json' } });
+  await elements.get('import-file').events.change(fileEvent(JSON.stringify(saved)));
+  assert.deepEqual(readPlain(), before);
+  assert.equal(elements.get('import-review').hidden, false);
+  elements.get('cancel-import').events.click(); assert.deepEqual(readPlain(), before);
+  await elements.get('import-file').events.change(fileEvent(JSON.stringify(saved)));
+  elements.get('confirm-import').events.click();
+  assert.equal(readPlain().preparation.projects[0].name, '測試 JSON 匯入');
+  assert.equal(elements.get('import-review').hidden, true);
+  const imported = readPlain();
+  await elements.get('import-file').events.change(fileEvent('{'));
+  assert.deepEqual(readPlain(), imported);
+  assert(elements.get('save-status').textContent.includes('原有資料未改動'));
+  await elements.get('import-file').events.change({ target: { files: [{ name: 'huge.json', size: 1024 * 1024 + 1 }], value: 'huge.json' } });
+  assert.deepEqual(readPlain(), imported);
+  assert(elements.get('save-status').textContent.includes('超過 1 MB'));
+  passed.push('File import validates first, waits for user confirmation and preserves work on cancel or failure');
+}
 check('Fresh opening resets entries; website also works without WebMCP', () => {
   boot({ mobile: true });
   assert.deepEqual(readPlain().preparation.confidence, {});
   assert.equal(readPlain().completedTasks.length, 0);
   assert.equal(readPlain().preparation.projects[0].name, '');
+  assert.equal(readPlain().preparation.contests.length, 1); assert.equal(readPlain().preparation.contests[0].name, '');
   assert(Object.values(readPlain().preparation.notes).every(rows => rows.length === 1 && Object.entries(rows[0]).every(([key, value]) => key === 'id' || value === '')));
   assert(Object.values(readPlain().preparation.exams).every(exam => !exam.selected && (exam.entries ? exam.entries.length === 1 && exam.entries.every(row => row.content === '' && row.level === '' && row.status === '') : exam.content === '' && exam.level === '' && exam.status === '')));
   assert.equal(elements.get('filter-details').open, false);
@@ -342,5 +428,7 @@ check('Static assets, language, favicon and narrow-screen rules', () => {
   assert(css.includes('overflow-x:auto'));
   assert(css.includes('prefers-reduced-motion'));
   assert(css.includes(':focus-visible'));
+  assert(css.includes('@media print') && css.includes('@page{size:A4'));
+  assert(html.includes('id="export-json"') && html.includes('id="import-json"')); 
 });
 console.log(JSON.stringify({ passed: passed.length, checks: passed, browserVisualQA: 'not performed', webmcpQA: 'simulated context only' }, null, 2));
