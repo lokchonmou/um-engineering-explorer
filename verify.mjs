@@ -335,7 +335,7 @@ check('Static assets, language, favicon and narrow-screen rules', () => {
   assert(html.includes('lang="zh-Hant"'));
   assert(html.includes('rel="icon"'));
   for (const match of html.matchAll(/(?:src|href)="([^"]+)"/g)) {
-    if (!/^(https?:|data:|#)/.test(match[1])) assert(fs.existsSync(path.join(root, 'dist', match[1])), `Missing asset: ${match[1]}`);
+    if (!/^(https?:|data:|#)/.test(match[1])) assert(fs.existsSync(path.join(root, 'dist', match[1].split('?')[0])), `Missing asset: ${match[1]}`);
   }
   const css = fs.readFileSync(path.join(root, 'dist/styles.css'), 'utf8');
   assert(css.includes('@media(max-width:600px)'));
