@@ -242,6 +242,30 @@ check('Multiple certification entries stay independent, escaped and survive swit
   const ids = queryAll('[data-exam-field]').map(input => input.id);
   assert.equal(new Set(ids).size, ids.length);
 });
+check('News and reflection records add independently, survive switching and remove only the chosen entry', () => {
+  const click = (key, value) => handlers.get('click')({ target: inputFor(key, value) });
+  for (const [group, key] of [['prep-news', 'topic'], ['prep-reflect', 'experience']]) {
+    const initial = readPlain().preparation.notes[group];
+    assert.equal(initial.length, 1); assert.equal(initial[0][key], '');
+    const firstId = initial[0].id;
+    const input = queryAll('[data-note-field]').find(input => input.dataset.noteEntry === firstId && input.dataset.noteField === key);
+    input.value = '<script>測試</script>'; handlers.get('input')({ target: input });
+    click('add-note', group);
+    const secondId = readPlain().preparation.notes[group][1].id;
+    assert.equal(document.activeElement.dataset.noteEntry, secondId);
+    assert(elements.get('checklist-content').innerHTML.includes('&lt;script&gt;測試&lt;/script&gt;'));
+    const focus = elements.get('prepare-focus'); focus.value = 'civil'; handlers.get('change')({ target: focus });
+    assert.equal(readPlain().preparation.notes[group][0][key], '<script>測試</script>');
+    click('remove-note', secondId);
+    assert.equal(readPlain().preparation.notes[group][0].id, firstId);
+    click('remove-note', firstId);
+    assert.equal(readPlain().preparation.notes[group].length, 1);
+    assert.equal(readPlain().preparation.notes[group][0][key], '');
+  }
+  assert.equal(queryAll('[data-note-field]').length, 6);
+  const ids = queryAll('[data-note-field]').map(input => input.id);
+  assert.equal(new Set(ids).size, ids.length);
+});
 check('Confidence is initially unanswered and changes targeted feedback without marking completion', () => {
   assert.deepEqual(readPlain().preparation.confidence, {});
   const id = 'prep-understanding';
@@ -298,6 +322,7 @@ check('Fresh opening resets entries; website also works without WebMCP', () => {
   assert.deepEqual(readPlain().preparation.confidence, {});
   assert.equal(readPlain().completedTasks.length, 0);
   assert.equal(readPlain().preparation.projects[0].name, '');
+  assert(Object.values(readPlain().preparation.notes).every(rows => rows.length === 1 && Object.entries(rows[0]).every(([key, value]) => key === 'id' || value === '')));
   assert(Object.values(readPlain().preparation.exams).every(exam => !exam.selected && (exam.entries ? exam.entries.length === 1 && exam.entries.every(row => row.content === '' && row.level === '' && row.status === '') : exam.content === '' && exam.level === '' && exam.status === '')));
   assert.equal(elements.get('filter-details').open, false);
   boot({ webmcp: false });

@@ -31,6 +31,13 @@
   window.createPreparation = ({ state, escape, references, repaint }) => {
     let nextProject = 2;
     let nextExam = 1;
+    let nextNote = 1;
+    const noteGroups = {
+      "prep-news": { label: "科技消息", addLabel: "新增科技消息", fields: [["topic", "我關注的議題"], ["news", "最近有甚麼值得記下的新聞"], ["source", "新聞來源／連結"]] },
+      "prep-reflect": { label: "學習回顧", addLabel: "新增學習回顧", fields: [["experience", "我想回顧的經驗"], ["change", "我的想法有何改變／學到甚麼"], ["next", "我的下一步"]] }
+    };
+    const blankNote = (group, id) => Object.fromEntries([["id", id], ...noteGroups[group].fields.map(([key]) => [key, ""])]);
+    state.notes = Object.fromEntries(Object.keys(noteGroups).map(group => [group, [blankNote(group, `${group}-0`)]]));
     const blankExam = id => ({ id, content: "", level: "", status: "" });
     const blankProject = id => ({ id, name: "", knowledge: "", skills: "", work: "" });
     state.projects = [blankProject("p1")]; state.confidence = {};
@@ -47,10 +54,14 @@
       const fields = !group.selected ? "" : exam.repeatable ? `<div class="project-fields">${group.entries.map((row, index) => `<div class="project-entry"><div class="entry-heading"><strong>${exam.label} ${index + 1}</strong><button type="button" class="text-button" data-remove-exam="${row.id}" data-exam-group="${exam.id}" aria-label="移除${exam.label} ${index + 1}">移除</button></div>${examInputs(exam, row)}</div>`).join("")}<button type="button" class="secondary-button" data-add-exam="${exam.id}">${exam.addLabel}</button></div>` : examInputs(exam, group);
       return `<div class="exam-entry"><div class="exam-heading"><label class="check-option"><input type="checkbox" data-exam="${exam.id}" ${group.selected ? "checked" : ""}><strong>${exam.label}</strong></label>${exam.source ? `<span class="source-line">${references([exam.source])}</span>` : ""}</div>${fields}</div>`;
     }).join("")}</div>`;
+    const noteMarkup = group => {
+      const config = noteGroups[group];
+      return `<div class="project-fields">${state.notes[group].map((row, index) => `<div class="project-entry"><div class="entry-heading"><strong>${config.label} ${index + 1}</strong><button type="button" class="text-button" data-remove-note="${row.id}" data-note-group="${group}" aria-label="移除${config.label} ${index + 1}">移除</button></div><div class="project-inputs">${config.fields.map(([key, label]) => `<label for="note-${row.id}-${key}">${label}<input type="text" id="note-${row.id}-${key}" data-note-group="${group}" data-note-entry="${row.id}" data-note-field="${key}" maxlength="300" value="${escape(row[key])}"></label>`).join("")}</div></div>`).join("")}<button type="button" class="secondary-button" data-add-note="${group}">${config.addLabel}</button></div>`;
+    };
     const contestMarkup = () => `<details class="contest-policy"><summary>參賽如何幫助升學？澳大有正式加分計劃</summary><div class="detail-body"><p><strong>澳大官方政策 · 2027/2028 學年</strong><br>適用於澳門中學應屆高三、參加當年度入學考試的申請人。符合指定獎項／資格並經審核，可在所報志願要求的各科入學考試加 20–50 分；同一類別累計上限 60 分，不同類別可累計。參賽本身不等於獲獎，亦不是保證錄取。</p><p><strong>科普類的工程相關例子</strong>（須符合官方列明的組別／獎項，通常於高中最後三年內獲得）：</p><ul><li>全澳青少年創新挑戰賽／全國青少年科技創新大賽：個人或集體項目獲獎</li><li>潛能拓展創新菁英賽／國際科學與工程大獎賽選拔活動：獲獎</li><li>澳門青少年綜合機械人科普活動選拔大賽：獲獎</li><li>通訊博物館電子裝置製作比賽：高中組獲獎</li><li>學界數學高中組、物理高級組、化學比賽：指定個人獎</li><li>中銀科創菁英挑戰賽：一、二或三等獎</li></ul><p><strong>現在可準備：</strong>保留證書、比賽章程、獲獎名單及個人貢獻紀錄。未列明的才能／獎項也可提交審核，但須附章程及獲獎名單。先完成入學考試報名，再於 2027 年 1 月 18–29 日申請加分；最多填報 10 項。完整名單、文件要求及當屆規則見官方頁。</p><p class="source-line">${references(["um-bonus"])} · 核對：2026-10-10</p><p><strong>其他大學 · 本站準備建議：</strong>競賽可留下解題、設計、測試與團隊貢獻的證據，供申請材料或面試說明；具體是否採計、是否加分，須看該校及入學途徑的規則。選有學習價值的挑戰，並把成果整理清楚。</p></div></details>`;
     const feedback = id => data.commonTasks.find(task => task.id === id)?.feedback[state.confidence[id] - 1] || "";
     function markup() {
-      return `<section class="check-group"><div class="check-group-heading"><h3>八項共同準備</h3><span>按自己的需要選擇</span></div><div class="prep-card-grid">${data.commonTasks.map((task, index) => `<article class="prep-card ${["prep-projects", "prep-exams"].includes(task.id) ? "wide-card" : ""}"><label class="prep-check"><input type="checkbox" data-task="${task.id}" ${state.completed.has(task.id) ? "checked" : ""}><span><small>${String(index + 1).padStart(2, "0")} / 我已開始這項準備</small><strong>${escape(task.title)}</strong></span></label><p>${escape(task.detail)}</p>${task.id === "prep-projects" ? projectMarkup() : task.id === "prep-exams" ? examMarkup() : task.id === "prep-contests" ? contestMarkup() : ""}<p class="prep-hint">${escape(task.evidence)}</p><fieldset class="confidence-options"><legend>我對這項準備的信心</legend>${levels.map((label, i) => `<label><input type="radio" name="confidence-${task.id}" data-confidence="${task.id}" value="${i + 1}" ${state.confidence[task.id] === i + 1 ? "checked" : ""}><span>${i + 1}<small>${label}</small></span></label>`).join("")}</fieldset><p class="confidence-feedback" data-confidence-feedback="${task.id}" role="status" aria-live="polite" ${feedback(task.id) ? "" : "hidden"}>${feedback(task.id) ? `下一步：${escape(feedback(task.id))}` : ""}</p></article>`).join("")}</div></section>`;
+      return `<section class="check-group"><div class="check-group-heading"><h3>八項共同準備</h3><span>按自己的需要選擇</span></div><div class="prep-card-grid">${data.commonTasks.map((task, index) => `<article class="prep-card ${["prep-projects", "prep-exams"].includes(task.id) ? "wide-card" : ""}"><label class="prep-check"><input type="checkbox" data-task="${task.id}" ${state.completed.has(task.id) ? "checked" : ""}><span><small>${String(index + 1).padStart(2, "0")} / 我已開始這項準備</small><strong>${escape(task.title)}</strong></span></label><p>${escape(task.detail)}</p>${task.id === "prep-projects" ? projectMarkup() : task.id === "prep-exams" ? examMarkup() : task.id === "prep-contests" ? contestMarkup() : noteGroups[task.id] ? noteMarkup(task.id) : ""}<p class="prep-hint">${escape(task.evidence)}</p><fieldset class="confidence-options"><legend>我對這項準備的信心</legend>${levels.map((label, i) => `<label><input type="radio" name="confidence-${task.id}" data-confidence="${task.id}" value="${i + 1}" ${state.confidence[task.id] === i + 1 ? "checked" : ""}><span>${i + 1}<small>${label}</small></span></label>`).join("")}</fieldset><p class="confidence-feedback" data-confidence-feedback="${task.id}" role="status" aria-live="polite" ${feedback(task.id) ? "" : "hidden"}>${feedback(task.id) ? `下一步：${escape(feedback(task.id))}` : ""}</p></article>`).join("")}</div></section>`;
     }
     function setConfidence(id, score) {
       if (!data.commonTasks.some(task => task.id === id) || !Number.isInteger(score) || score < 1 || score > 4) throw new Error("請選有效項目及 1–4 級信心");
@@ -70,6 +81,12 @@
       row[key] = value;
     }
     function onInput(input) {
+      if (input.dataset.noteField) {
+        const config = noteGroups[input.dataset.noteGroup];
+        const row = state.notes[input.dataset.noteGroup]?.find(note => note.id === input.dataset.noteEntry);
+        if (!row || !config?.fields.some(([key]) => key === input.dataset.noteField) || typeof input.value !== "string" || input.value.length > 300) throw new Error("紀錄輸入無效");
+        row[input.dataset.noteField] = input.value;
+      }
       if (input.dataset.projectField) setProjectField(input.dataset.project, input.dataset.projectField, input.value);
       if (input.dataset.examField && input.dataset.examField !== "status") setExamField(input.dataset.examId, input.dataset.examField, input.value, input.dataset.examEntry);
     }
@@ -83,6 +100,20 @@
       if (input.dataset.examField === "status") setExamField(input.dataset.examId, "status", input.value, input.dataset.examEntry);
     }
     function onClick(target) {
+      const addNote = target.closest("[data-add-note]");
+      if (addNote && noteGroups[addNote.dataset.addNote]) {
+        const group = addNote.dataset.addNote;
+        const id = `${group}-${nextNote++}`;
+        state.notes[group].push(blankNote(group, id)); repaint();
+        [...document.querySelectorAll("[data-note-field]")].find(input => input.dataset.noteEntry === id)?.focus({ preventScroll: true });
+      }
+      const removeNote = target.closest("[data-remove-note]");
+      if (removeNote && noteGroups[removeNote.dataset.noteGroup]) {
+        const group = removeNote.dataset.noteGroup;
+        state.notes[group] = state.notes[group].filter(note => note.id !== removeNote.dataset.removeNote);
+        if (!state.notes[group].length) state.notes[group].push(blankNote(group, `${group}-${nextNote++}`));
+        repaint(); [...document.querySelectorAll("[data-add-note]")].find(button => button.dataset.addNote === group)?.focus({ preventScroll: true });
+      }
       const addExam = target.closest("[data-add-exam]");
       if (addExam && state.exams[addExam.dataset.addExam]?.entries) {
         const groupId = addExam.dataset.addExam;
@@ -109,7 +140,7 @@
         repaint(); document.querySelectorAll("[data-add-project]")[0]?.focus({ preventScroll: true });
       }
     }
-    const read = () => JSON.parse(JSON.stringify({ projects: state.projects, exams: state.exams, confidence: state.confidence, feedback: Object.fromEntries(Object.keys(state.confidence).map(id => [id, feedback(id)])) }));
+    const read = () => JSON.parse(JSON.stringify({ projects: state.projects, exams: state.exams, notes: state.notes, confidence: state.confidence, feedback: Object.fromEntries(Object.keys(state.confidence).map(id => [id, feedback(id)])) }));
     return { markup, onInput, onChange, onClick, read, setConfidence, setProjectField, setExamField };
   };
 })();
