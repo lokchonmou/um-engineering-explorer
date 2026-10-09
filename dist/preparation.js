@@ -13,9 +13,8 @@
   ];
   data.examOptions = [
     { id: "python", label: "中國電子學會：Python 等級考試（1–6 級）", placeholder: "填 Python 考試內容／準備重點", levelPlaceholder: "填已考或目標第 1–6 級、成績", source: "python-exam" },
-    { id: "cie-other", label: "青少年等級考試：其他科目", placeholder: "填科目，例如機械人技術、電子技術、三維創意設計", levelPlaceholder: "填該科目的級別、成績或目標", source: "cie-exam" },
-    { id: "arduino", label: "Arduino 認證", placeholder: "填認證名稱及考試內容", levelPlaceholder: "填結果或目標；按實際認證填寫", source: "arduino-exam" },
-    { id: "other", label: "其他認證／考試（自行填寫）", placeholder: "填主辦機構、認證名稱及內容", levelPlaceholder: "填級別、成績或目標" },
+    { id: "cie-other", label: "中國電子學會認證：其他科目", repeatable: true, addLabel: "新增中國電子學會認證", placeholder: "填科目，例如機械人技術、電子技術、三維創意設計", levelPlaceholder: "填該科目的級別、成績或目標", source: "cie-exam" },
+    { id: "other", label: "其他認證", repeatable: true, addLabel: "新增其他認證", placeholder: "填主辦機構、認證名稱及內容", levelPlaceholder: "填級別、成績或目標" },
     { id: "ielts", label: "IELTS", placeholder: "填測試類型／準備內容", levelPlaceholder: "填已有或目標分數", source: "ielts-exam" },
     { id: "igcse", label: "IGCSE", placeholder: "填考試局、科目／代碼", levelPlaceholder: "填已有或目標等級", source: "igcse-exam" },
     { id: "ial", label: "IAL", placeholder: "填科目／單元／考試內容", levelPlaceholder: "填 IAS／IAL、成績或目標", source: "ial-exam" }
@@ -24,7 +23,6 @@
     { id: "um-bonus", title: "澳大註冊處：入學考試加分計劃", url: "https://reg.um.edu.mo/admissions/macao-students/admission-examination/rules/bonus-scheme/?lang=zh-hant", type: "大學官方招生政策", note: "2026-10-10 核對頁面為 2027/2028 學年。符合條件的獎項／資格須另行申請並經審核；參賽本身不等於獲獎加分。申請前核對當屆規則。" },
     { id: "python-exam", title: "中國電子學會：青少年軟件編程等級考試（Python）", url: "https://www.qceit.org.cn/bos/20191101110749810.html", type: "考試機構官方", note: "Python 分第 1–6 級；填已考或目標級別。考試安排與考綱請另核對最新官方公告。" },
     { id: "cie-exam", title: "中國電子學會考評中心：青少年等級考試", url: "https://www.qceit.org.cn/", type: "考試機構官方", note: "包含機械人技術、電子技術、三維創意設計等科目。各科級別不同，不能套用 Python 的 1–6 級；按該科官方考綱填寫。" },
-    { id: "arduino-exam", title: "Arduino：官方認證", url: "https://www.arduino.cc/education/certifications", type: "認證機構官方", note: "核對實際 Arduino 認證名稱與內容；不要把其他機構以 Arduino 為平台的等級考試視為同一認證。" },
     { id: "ielts-exam", title: "IELTS：測試選擇與準備", url: "https://ielts.org/take-a-test", type: "測試主辦官方", note: "英文測試類型與準備入口；填清測試類型及已有或目標分數。" },
     { id: "igcse-exam", title: "Cambridge IGCSE：科目資料", url: "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-upper-secondary/cambridge-igcse/subjects/", type: "考試機構官方", note: "Cambridge IGCSE 科目與考綱入口。填清實際考試局、科目及等級，按自己的課程查閱。" },
     { id: "ial-exam", title: "Pearson Edexcel：International AS/A Levels", url: "https://qualifications.pearson.com/en/qualifications/edexcel-international-advanced-levels.html", type: "考試機構官方", note: "IAL 科目與資格資料入口；填清科目／單元及已有或目標結果。" }
@@ -32,15 +30,22 @@
 
   window.createPreparation = ({ state, escape, references, repaint }) => {
     let nextProject = 2;
+    let nextExam = 1;
+    const blankExam = id => ({ id, content: "", level: "", status: "" });
     const blankProject = id => ({ id, name: "", knowledge: "", skills: "", work: "" });
     state.projects = [blankProject("p1")]; state.confidence = {};
-    state.exams = Object.fromEntries(data.examOptions.map(exam => [exam.id, { selected: false, content: "", level: "", status: "" }]));
+    state.exams = Object.fromEntries(data.examOptions.map(exam => [exam.id, exam.repeatable ? { selected: false, entries: [blankExam(`${exam.id}-0`)] } : { selected: false, content: "", level: "", status: "" }]));
     const levels = ["需要起步", "有部分把握", "大致有把握", "很有把握"];
     const statusOptions = [["", "請選狀態"], ["considering", "考慮中"], ["preparing", "準備中"], ["taken", "已考"]];
     const projectMarkup = () => `<div class="project-fields">${state.projects.map((project, index) => `<div class="project-entry"><div class="entry-heading"><strong>Project ${index + 1}</strong><button type="button" class="text-button" data-remove-project="${project.id}" aria-label="移除 Project ${index + 1}">移除</button></div><div class="project-inputs">${[["name", "我做過的 project"], ["knowledge", "其中的知識／原理"], ["skills", "其中的技能／操作"], ["work", "我親自負責的工作"]].map(([key, label]) => `<label for="project-${project.id}-${key}">${label}<input type="text" id="project-${project.id}-${key}" data-project="${project.id}" data-project-field="${key}" maxlength="300" value="${escape(project[key])}"></label>`).join("")}</div></div>`).join("")}<button type="button" class="secondary-button" data-add-project="true">新增 project</button></div>`;
+    const examInputs = (exam, row) => {
+      const id = row.id || exam.id;
+      return `<div class="exam-inputs"><label for="exam-${id}-content">內容／科目<input type="text" id="exam-${id}-content" data-exam-field="content" data-exam-id="${exam.id}" ${row.id ? `data-exam-entry="${row.id}"` : ""} maxlength="300" value="${escape(row.content)}" placeholder="${escape(exam.placeholder)}"></label><label for="exam-${id}-level">級別／成績／目標<input type="text" id="exam-${id}-level" data-exam-field="level" data-exam-id="${exam.id}" ${row.id ? `data-exam-entry="${row.id}"` : ""} maxlength="300" value="${escape(row.level)}" placeholder="${escape(exam.levelPlaceholder)}"></label><label for="exam-${id}-status">目前狀態<select id="exam-${id}-status" data-exam-field="status" data-exam-id="${exam.id}" ${row.id ? `data-exam-entry="${row.id}"` : ""}>${statusOptions.map(([value, label]) => `<option value="${value}" ${row.status === value ? "selected" : ""}>${label}</option>`).join("")}</select></label></div>`;
+    };
     const examMarkup = () => `<div class="exam-fields">${data.examOptions.map(exam => {
-      const row = state.exams[exam.id];
-      return `<div class="exam-entry"><div class="exam-heading"><label class="check-option"><input type="checkbox" data-exam="${exam.id}" ${row.selected ? "checked" : ""}><strong>${exam.label}</strong></label>${exam.source ? `<span class="source-line">${references([exam.source])}</span>` : ""}</div>${row.selected ? `<div class="exam-inputs"><label for="exam-${exam.id}-content">內容／科目<input type="text" id="exam-${exam.id}-content" data-exam-field="content" data-exam-id="${exam.id}" maxlength="300" value="${escape(row.content)}" placeholder="${escape(exam.placeholder)}"></label><label for="exam-${exam.id}-level">級別／成績／目標<input type="text" id="exam-${exam.id}-level" data-exam-field="level" data-exam-id="${exam.id}" maxlength="300" value="${escape(row.level)}" placeholder="${escape(exam.levelPlaceholder)}"></label><label for="exam-${exam.id}-status">目前狀態<select id="exam-${exam.id}-status" data-exam-field="status" data-exam-id="${exam.id}">${statusOptions.map(([value, label]) => `<option value="${value}" ${row.status === value ? "selected" : ""}>${label}</option>`).join("")}</select></label></div>` : ""}</div>`;
+      const group = state.exams[exam.id];
+      const fields = !group.selected ? "" : exam.repeatable ? `<div class="project-fields">${group.entries.map((row, index) => `<div class="project-entry"><div class="entry-heading"><strong>${exam.label} ${index + 1}</strong><button type="button" class="text-button" data-remove-exam="${row.id}" data-exam-group="${exam.id}" aria-label="移除${exam.label} ${index + 1}">移除</button></div>${examInputs(exam, row)}</div>`).join("")}<button type="button" class="secondary-button" data-add-exam="${exam.id}">${exam.addLabel}</button></div>` : examInputs(exam, group);
+      return `<div class="exam-entry"><div class="exam-heading"><label class="check-option"><input type="checkbox" data-exam="${exam.id}" ${group.selected ? "checked" : ""}><strong>${exam.label}</strong></label>${exam.source ? `<span class="source-line">${references([exam.source])}</span>` : ""}</div>${fields}</div>`;
     }).join("")}</div>`;
     const contestMarkup = () => `<details class="contest-policy"><summary>參賽如何幫助升學？澳大有正式加分計劃</summary><div class="detail-body"><p><strong>澳大官方政策 · 2027/2028 學年</strong><br>適用於澳門中學應屆高三、參加當年度入學考試的申請人。符合指定獎項／資格並經審核，可在所報志願要求的各科入學考試加 20–50 分；同一類別累計上限 60 分，不同類別可累計。參賽本身不等於獲獎，亦不是保證錄取。</p><p><strong>科普類的工程相關例子</strong>（須符合官方列明的組別／獎項，通常於高中最後三年內獲得）：</p><ul><li>全澳青少年創新挑戰賽／全國青少年科技創新大賽：個人或集體項目獲獎</li><li>潛能拓展創新菁英賽／國際科學與工程大獎賽選拔活動：獲獎</li><li>澳門青少年綜合機械人科普活動選拔大賽：獲獎</li><li>通訊博物館電子裝置製作比賽：高中組獲獎</li><li>學界數學高中組、物理高級組、化學比賽：指定個人獎</li><li>中銀科創菁英挑戰賽：一、二或三等獎</li></ul><p><strong>現在可準備：</strong>保留證書、比賽章程、獲獎名單及個人貢獻紀錄。未列明的才能／獎項也可提交審核，但須附章程及獲獎名單。先完成入學考試報名，再於 2027 年 1 月 18–29 日申請加分；最多填報 10 項。完整名單、文件要求及當屆規則見官方頁。</p><p class="source-line">${references(["um-bonus"])} · 核對：2026-10-10</p><p><strong>其他大學 · 本站準備建議：</strong>競賽可留下解題、設計、測試與團隊貢獻的證據，供申請材料或面試說明；具體是否採計、是否加分，須看該校及入學途徑的規則。選有學習價值的挑戰，並把成果整理清楚。</p></div></details>`;
     const feedback = id => data.commonTasks.find(task => task.id === id)?.feedback[state.confidence[id] - 1] || "";
@@ -58,14 +63,15 @@
       if (!row || !["name", "knowledge", "skills", "work"].includes(key) || typeof value !== "string" || value.length > 300) throw new Error("Project 輸入無效");
       row[key] = value;
     }
-    function setExamField(id, key, value) {
-      const row = Object.hasOwn(state.exams, id) ? state.exams[id] : undefined;
+    function setExamField(id, key, value, entryId) {
+      const group = Object.hasOwn(state.exams, id) ? state.exams[id] : undefined;
+      const row = group?.entries ? group.entries.find(entry => entry.id === entryId) : group;
       if (!row || !["content", "level", "status"].includes(key) || typeof value !== "string" || value.length > 300 || (key === "status" && !statusOptions.some(([status]) => status === value))) throw new Error("考試輸入無效");
       row[key] = value;
     }
     function onInput(input) {
       if (input.dataset.projectField) setProjectField(input.dataset.project, input.dataset.projectField, input.value);
-      if (input.dataset.examField && input.dataset.examField !== "status") setExamField(input.dataset.examId, input.dataset.examField, input.value);
+      if (input.dataset.examField && input.dataset.examField !== "status") setExamField(input.dataset.examId, input.dataset.examField, input.value, input.dataset.examEntry);
     }
     function onChange(input) {
       if (input.dataset.confidence) setConfidence(input.dataset.confidence, Number(input.value));
@@ -74,9 +80,24 @@
         state.exams[input.dataset.exam].selected = input.checked; repaint();
         [...document.querySelectorAll("[data-exam]")].find(field => field.dataset.exam === input.dataset.exam)?.focus({ preventScroll: true });
       }
-      if (input.dataset.examField === "status") setExamField(input.dataset.examId, "status", input.value);
+      if (input.dataset.examField === "status") setExamField(input.dataset.examId, "status", input.value, input.dataset.examEntry);
     }
     function onClick(target) {
+      const addExam = target.closest("[data-add-exam]");
+      if (addExam && state.exams[addExam.dataset.addExam]?.entries) {
+        const groupId = addExam.dataset.addExam;
+        const id = `${groupId}-${nextExam++}`;
+        state.exams[groupId].entries.push(blankExam(id)); repaint();
+        [...document.querySelectorAll("[data-exam-field]")].find(input => input.dataset.examEntry === id && input.dataset.examField === "content")?.focus({ preventScroll: true });
+      }
+      const removeExam = target.closest("[data-remove-exam]");
+      if (removeExam && state.exams[removeExam.dataset.examGroup]?.entries) {
+        const groupId = removeExam.dataset.examGroup;
+        const group = state.exams[groupId];
+        group.entries = group.entries.filter(entry => entry.id !== removeExam.dataset.removeExam);
+        if (!group.entries.length) group.entries.push(blankExam(`${groupId}-${nextExam++}`));
+        repaint(); [...document.querySelectorAll("[data-add-exam]")].find(button => button.dataset.addExam === groupId)?.focus({ preventScroll: true });
+      }
       if (target.closest("[data-add-project]")) {
         const id = `p${nextProject++}`; state.projects.push(blankProject(id)); repaint();
         [...document.querySelectorAll("[data-project-field]")].find(input => input.dataset.project === id && input.dataset.projectField === "name")?.focus({ preventScroll: true });

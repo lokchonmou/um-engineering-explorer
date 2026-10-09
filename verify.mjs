@@ -99,7 +99,7 @@ check('Six complete programme records and traceable primary sources', () => {
   for (const task of tasks) assert(task.evidence.length);
   assert.equal(data.commonTasks.length, 8);
   for (const task of data.commonTasks) assert.equal(task.feedback.length, 4);
-  assert.deepEqual(JSON.parse(JSON.stringify(data.examOptions.map(exam => exam.id))), ['python', 'cie-other', 'arduino', 'other', 'ielts', 'igcse', 'ial']);
+  assert.deepEqual(JSON.parse(JSON.stringify(data.examOptions.map(exam => exam.id))), ['python', 'cie-other', 'other', 'ielts', 'igcse', 'ial']);
   for (const exam of data.examOptions) if (exam.source) assert(data.sources.some(source => source.id === exam.source));
   assert(data.examOptions.find(exam => exam.id === "python").label.includes("1–6"));
   assert(data.sources.find(source => source.id === "python-exam").url.includes("qceit.org.cn"));
@@ -205,9 +205,42 @@ check('Exam checkboxes reveal content, level and status; switching preserves ent
   const focus = elements.get('prepare-focus'); focus.value = 'common'; handlers.get('change')({ target: focus });
   assert.equal(readPlain().preparation.exams.igcse.status, 'preparing');
   assert.equal(readPlain().preparation.exams.igcse.level, '目標 A');
-  for (const id of ['python', 'cie-other', 'arduino', 'other', 'ielts', 'ial']) dispatchChange(inputFor('exam', id), true);
-  assert.equal(queryAll('[data-exam-field]').length, 21);
+  for (const id of ['python', 'cie-other', 'other', 'ielts', 'ial']) dispatchChange(inputFor('exam', id), true);
+  assert.equal(queryAll('[data-exam-field]').length, 18);
   assert.equal(readPlain().preparation.projects[0].skills, '我能獨立做的操作');
+});
+check('Multiple certification entries stay independent, escaped and survive switches and removals', () => {
+  const click = (key, value) => handlers.get('click')({ target: inputFor(key, value) });
+  const write = (entry, field, value) => {
+    const input = queryAll('[data-exam-field]').find(input => input.dataset.examEntry === entry && input.dataset.examField === field);
+    assert(input); input.value = value; handlers.get(field === 'status' ? 'change' : 'input')({ target: input });
+  };
+  for (const group of ['cie-other', 'other']) {
+    const firstId = readPlain().preparation.exams[group].entries[0].id;
+    write(firstId, 'content', `${group} <img src=x onerror=alert(1)>`);
+    write(firstId, 'level', '第 2 級'); write(firstId, 'status', 'taken');
+    click('add-exam', group);
+    const secondId = readPlain().preparation.exams[group].entries[1].id;
+    assert.equal(document.activeElement.dataset.examEntry, secondId);
+    write(secondId, 'content', '另一認證'); write(secondId, 'level', '目標第 3 級'); write(secondId, 'status', 'preparing');
+    dispatchChange(inputFor('exam', group), false);
+    dispatchChange(inputFor('exam', group), true);
+    assert.equal(readPlain().preparation.exams[group].entries[1].content, '另一認證');
+    const focus = elements.get('prepare-focus'); focus.value = 'cs'; handlers.get('change')({ target: focus });
+    assert.equal(readPlain().preparation.exams[group].entries[0].status, 'taken');
+    assert(elements.get('checklist-content').innerHTML.includes('&lt;img src=x onerror=alert(1)&gt;'));
+    assert(!elements.get('checklist-content').innerHTML.includes('<img src=x'));
+    click('remove-exam', firstId);
+    assert.equal(readPlain().preparation.exams[group].entries[0].id, secondId);
+    assert.equal(readPlain().preparation.exams[group].entries[0].level, '目標第 3 級');
+    click('remove-exam', secondId);
+    assert.equal(readPlain().preparation.exams[group].entries.length, 1);
+    assert.equal(readPlain().preparation.exams[group].entries[0].content, '');
+  }
+  assert(!data.sources.some(source => source.id === 'arduino-exam'));
+  assert(!elements.get('checklist-content').innerHTML.includes('Arduino 認證'));
+  const ids = queryAll('[data-exam-field]').map(input => input.id);
+  assert.equal(new Set(ids).size, ids.length);
 });
 check('Confidence is initially unanswered and changes targeted feedback without marking completion', () => {
   assert.deepEqual(readPlain().preparation.confidence, {});
@@ -265,7 +298,7 @@ check('Fresh opening resets entries; website also works without WebMCP', () => {
   assert.deepEqual(readPlain().preparation.confidence, {});
   assert.equal(readPlain().completedTasks.length, 0);
   assert.equal(readPlain().preparation.projects[0].name, '');
-  assert(Object.values(readPlain().preparation.exams).every(exam => !exam.selected && exam.content === '' && exam.level === '' && exam.status === ''));
+  assert(Object.values(readPlain().preparation.exams).every(exam => !exam.selected && (exam.entries ? exam.entries.length === 1 && exam.entries.every(row => row.content === '' && row.level === '' && row.status === '') : exam.content === '' && exam.level === '' && exam.status === '')));
   assert.equal(elements.get('filter-details').open, false);
   boot({ webmcp: false });
   assert.equal(registered.size, 0);
