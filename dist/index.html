@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="比較澳門大學六個工程與資訊方向：真正學習內容、數學與程式要求、AI 影響與中學生準備清單。">
+  <meta name="theme-color" content="#152745">
+  <title>澳大工程升學探索站</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23152745'/%3E%3Cpath d='M8 8v11q0 6 8 6t8-6V8' fill='none' stroke='%23ffbb60' stroke-width='4'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="data.js"></script>
+  <script defer src="preparation.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到主要內容</a>
+  <header class="masthead">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">U</span><div><span class="brand-title">澳大工程升學探索站</span><span class="brand-sub">UM ENGINEERING EXPLORER</span></div></div>
+    <span class="edition">升學探索 · 第一版</span>
+  </header>
+  <div class="intro">
+    <div><p class="eyebrow">從你想解決的問題，開始選科</p><h1>看清學甚麼，再決定走哪條路。</h1><p>機械、電路、軟件、城市、晶片、機械人——六個方向，六種工程視角。</p></div>
+    <div class="intro-note"><span>資料核對</span><strong>2026.10.09</strong><span>新課程狀態另作標示</span></div>
+  </div>
+  <nav class="view-nav" aria-label="探索站功能">
+    <button type="button" data-view="explore" aria-current="page">探索科目</button>
+    <button type="button" data-view="compare">並排比較 <span id="compare-count">2</span></button>
+    <button type="button" data-view="prepare">準備清單</button>
+    <button type="button" data-view="architecture">土木 vs 建築</button>
+    <button type="button" data-view="sources">參考來源</button>
+  </nav>
+  <main id="main" tabindex="-1">
+    <section id="explore-view" class="view" aria-labelledby="explore-title">
+      <div class="workspace">
+        <aside class="filters" aria-label="興趣及能力篩選">
+          <div class="filter-heading"><h2>找到探索方向</h2><button type="button" id="reset-filters" class="text-button">重設</button></div>
+          <details id="filter-details" open><summary>展開興趣與能力篩選</summary><div class="filter-body">
+          <fieldset><legend>我想處理甚麼？<small>多選；符合其中一項即可</small></legend><div id="interest-options" class="option-stack"></div></fieldset>
+          <fieldset><legend>我較有把握的能力<small>選出想用來起步的優勢</small></legend><div id="ability-options" class="option-stack"></div></fieldset>
+          <p class="filter-note">兩組條件同時套用。篩選依學科重點，不是性向測驗或入學門檻；能力可以逐步補強。</p>
+          </div></details>
+        </aside>
+        <div class="results">
+          <div class="section-heading"><div><p class="eyebrow">01 / 課程探索</p><h2 id="explore-title">六個方向，逐一拆解</h2></div><p id="result-count" role="status" aria-live="polite"></p></div>
+          <div class="notice"><strong>新課程進度</strong><span>微電子與機械人學士均擬於 <b>2028/2029</b> 學年開辦，待澳門特區公報刊登後生效。不是已確認招生的承諾。</span><a href="https://fic.um.edu.mo/programmes/" target="_blank" rel="noopener noreferrer">澳大官方課程頁</a></div>
+          <div id="programme-grid" class="programme-grid"></div>
+          <div id="empty-state" class="empty-state" hidden><h3>目前沒有同時符合的方向</h3><p>減少一項篩選條件，再探索相鄰學科。這不代表你不適合工程。</p><button type="button" id="empty-reset" class="button">顯示全部科目</button></div>
+        </div>
+      </div>
+    </section>
+    <section id="compare-view" class="view" aria-labelledby="compare-title" hidden>
+      <div class="section-heading"><div><p class="eyebrow">02 / 並排比較</p><h2 id="compare-title">同一把尺，看清差異</h2></div><button type="button" id="clear-compare" class="secondary-button">清除選科</button></div>
+      <p class="section-description">勾選任何科目即可加入。數學與程式描述是大學學習需求概要，不是澳大的收生分數或先修要求。</p>
+      <div id="compare-options" class="compare-options"></div>
+      <div id="comparison-content"></div>
+    </section>
+    <section id="prepare-view" class="view" aria-labelledby="prepare-title" hidden>
+      <div class="section-heading"><div><p class="eyebrow">03 / 現在就能開始</p><h2 id="prepare-title">我會甚麼？下一步準備甚麼？</h2></div><label class="focus-select" for="prepare-focus">探索方向<select id="prepare-focus"></select></label></div>
+      <p class="section-description">先從你自己的經驗開始，再選一項值得推進的準備。可用關鍵字填寫；每項選擇 1–4 級信心後會顯示下一步建議。以下是探索建議，不是官方申請條件。</p>
+      <div class="progress-panel"><div><strong id="progress-label" role="status" aria-live="polite"></strong><span>勾選及輸入只保留本次開啟；重新整理會重設。</span></div><progress id="check-progress" max="1" value="0" aria-label="目前清單開始準備的進度"></progress></div>
+      <p class="confidence-note">信心是自我感受，不能直接當成能力分數。回饋只提供一個可做的下一步；可用實際表現或老師追問再核對。</p>
+      <div id="checklist-content"></div>
+      <div class="reflection"><span class="reflection-label">這次先選一個下一步</span><h3>我會甚麼、憑甚麼知道、下一步要補甚麼？</h3><p>用一次說明、練習或真實嘗試檢查自己的判斷，再調整準備方向。</p></div>
+    </section>
+    <section id="architecture-view" class="view" aria-labelledby="architecture-title" hidden>
+      <div class="section-heading"><div><p class="eyebrow">04 / 釐清定位</p><h2 id="architecture-title">土木工程與建築系，關心的問題不同</h2></div></div>
+      <p class="section-description">以澳大土木課程與香港大學建築學課程作具體例子。各大學安排不同，以下不是所有建築系的統一課程表。</p>
+      <div class="discipline-pair"><article><span class="eyebrow">CIVIL ENGINEERING / 澳大</span><h3>讓建設安全、可行、可靠</h3><p>結構能否承受荷載？地基會否沉降？道路、排水及施工如何運作？</p><span class="key-term">力學 · 計算 · 材料 · 基建</span></article><article><span class="eyebrow">ARCHITECTURAL STUDIES / 以港大為例</span><h3>讓空間回應人的生活</h3><p>人如何使用空間？採光、動線、形式、文化與環境如何形成設計？</p><span class="key-term">設計工作室 · 空間 · 文化 · 技術</span></article></div>
+      <div class="table-scroll" role="region" aria-label="土木與建築定位比較表" tabindex="0"><table class="architecture-table"><thead><tr><th scope="col">比較面向</th><th scope="col">土木工程</th><th scope="col">建築系 / 建築學</th></tr></thead><tbody>
+        <tr><th scope="row">核心學習</th><td>力學、材料、結構、土力與地基、工程數學；基建及施工問題。</td><td>設計工作室、建築歷史與理論、建築技術及視覺表達；空間與城市問題。</td></tr>
+        <tr><th scope="row">典型學習產出</th><td>計算書、分析模型、工程圖、實驗與工程設計報告。</td><td>設計方案、圖則、實體或數碼模型、作品集及設計論證。</td></tr>
+        <tr><th scope="row">數學與程式</th><td>定量建模是核心；程式可協助分析、數據處理與自動化。</td><td>仍需技術與定量理解；參數化設計與程式工具的重要性因課程而異。</td></tr>
+        <tr><th scope="row">典型工作方向</th><td>結構、土木、地基、基建及工程項目相關工作。</td><td>建築設計、空間與城市設計、建築技術等相關工作。</td></tr>
+        <tr><th scope="row">同一座樓，怎樣合作？</th><td>計算受力、配置結構、評估地基及工程施工可行性。</td><td>整合使用需求、空間、外觀與環境策略；與各專業協作。</td></tr>
+      </tbody></table></div>
+      <div class="notice"><strong>學位與專業資格</strong><span>土木學位不是建築師資格；建築本科亦不等於立即取得註冊資格。港大官方頁列明其建築碩士畢業生須通過專業評核方可申請香港註冊；其他地區另有規定。</span></div>
+      <p class="source-line">依據：<a href="https://feg.um.edu.mo/cee/studyplan/bachelor_from2021/" target="_blank" rel="noopener noreferrer">澳大土木課程表（2021/2022 起）</a> · <a href="https://www.arch.hku.hk/programmes/arch/bachelor-of-arts-in-architectural-studies/" target="_blank" rel="noopener noreferrer">港大建築學官方介紹</a>。典型產出與合作分工為本站歸納。</p>
+    </section>
+    <section id="sources-view" class="view" aria-labelledby="sources-title" hidden>
+      <div class="section-heading"><div><p class="eyebrow">05 / 查證與追溯</p><h2 id="sources-title">先看官方課程表，再看分析</h2></div></div>
+      <div class="evidence-key"><p><strong>官方資料</strong>課名、課程重點、擬開辦狀態。</p><p><strong>本站歸納</strong>能力對應、典型工作方向、學生準備任務。</p><p><strong>分析判斷</strong>AI 改變哪些任務，以及仍須人作出的工程判斷。</p></div>
+      <p class="section-description">核對日期：2026 年 10 月 9 日。部分澳大頁面正文未能直接擷取，已用官方頁面的搜尋索引交叉核對；新課程狀態與所列課名可追溯至下列官方連結。既有課程表按入學年份適用，不代表當屆招生章程。報名前重新核對教務處公告。</p>
+      <div id="source-list" class="source-list"></div>
+    </section>
+  </main>
+  <footer><span>澳大工程升學探索站 · 教學探索用途，非澳大官方網站</span><span>課程事實與升學分析分開標示</span></footer>
+  <div class="compare-dock"><div><strong id="dock-count">已選 2 科</strong><span id="dock-names">EME · ECE</span></div><button type="button" data-view="compare" class="button">開始比較</button></div>
+  <noscript><p class="notice">互動比較、篩選與清單需要啟用 JavaScript。請啟用後重新整理。</p></noscript>
+</body>
+</html>
