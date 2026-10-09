@@ -203,19 +203,19 @@ check('Exam checkboxes reveal content, level and status; switching preserves ent
   dispatchChange(inputFor('exam', 'igcse'), true);
   assert.equal(queryAll('[data-exam-field]').find(input => input.dataset.examField === 'content').value, 'Cambridge Mathematics 0580');
   const focus = elements.get('prepare-focus'); focus.value = 'common'; handlers.get('change')({ target: focus });
-  assert.equal(readPlain().preparation.exams.igcse.status, 'preparing');
-  assert.equal(readPlain().preparation.exams.igcse.level, '目標 A');
+  assert.equal(readPlain().preparation.exams.igcse.entries[0].status, 'preparing');
+  assert.equal(readPlain().preparation.exams.igcse.entries[0].level, '目標 A');
   for (const id of ['python', 'cie-other', 'other', 'ielts', 'ial']) dispatchChange(inputFor('exam', id), true);
   assert.equal(queryAll('[data-exam-field]').length, 18);
   assert.equal(readPlain().preparation.projects[0].skills, '我能獨立做的操作');
 });
-check('Multiple certification entries stay independent, escaped and survive switches and removals', () => {
+check('Multiple certification and IGCSE/IAL subject entries stay independent, escaped and survive switches and removals', () => {
   const click = (key, value) => handlers.get('click')({ target: inputFor(key, value) });
   const write = (entry, field, value) => {
     const input = queryAll('[data-exam-field]').find(input => input.dataset.examEntry === entry && input.dataset.examField === field);
     assert(input); input.value = value; handlers.get(field === 'status' ? 'change' : 'input')({ target: input });
   };
-  for (const group of ['cie-other', 'other']) {
+  for (const group of ['cie-other', 'other', 'igcse', 'ial']) {
     const firstId = readPlain().preparation.exams[group].entries[0].id;
     write(firstId, 'content', `${group} <img src=x onerror=alert(1)>`);
     write(firstId, 'level', '第 2 級'); write(firstId, 'status', 'taken');

@@ -16,8 +16,8 @@
     { id: "cie-other", label: "中國電子學會認證：其他科目", repeatable: true, addLabel: "新增中國電子學會認證", placeholder: "填科目，例如機械人技術、電子技術、三維創意設計", levelPlaceholder: "填該科目的級別、成績或目標", source: "cie-exam" },
     { id: "other", label: "其他認證", repeatable: true, addLabel: "新增其他認證", placeholder: "填主辦機構、認證名稱及內容", levelPlaceholder: "填級別、成績或目標" },
     { id: "ielts", label: "IELTS", placeholder: "填測試類型／準備內容", levelPlaceholder: "填已有或目標分數", source: "ielts-exam" },
-    { id: "igcse", label: "IGCSE", placeholder: "填考試局、科目／代碼", levelPlaceholder: "填已有或目標等級", source: "igcse-exam" },
-    { id: "ial", label: "IAL", placeholder: "填科目／單元／考試內容", levelPlaceholder: "填 IAS／IAL、成績或目標", source: "ial-exam" }
+    { id: "igcse", label: "IGCSE", repeatable: true, addLabel: "新增 IGCSE 科目", placeholder: "填考試局、科目／代碼", levelPlaceholder: "填已有或目標等級", source: "igcse-exam" },
+    { id: "ial", label: "IAL", repeatable: true, addLabel: "新增 IAL 科目", placeholder: "填科目／單元／考試內容", levelPlaceholder: "填 IAS／IAL、成績或目標", source: "ial-exam" }
   ];
   data.sources.push(
     { id: "um-bonus", title: "澳大註冊處：入學考試加分計劃", url: "https://reg.um.edu.mo/admissions/macao-students/admission-examination/rules/bonus-scheme/?lang=zh-hant", type: "大學官方招生政策", note: "2026-10-10 核對頁面為 2027/2028 學年。符合條件的獎項／資格須另行申請並經審核；參賽本身不等於獲獎加分。申請前核對當屆規則。" },
